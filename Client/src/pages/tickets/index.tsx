@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Box, InputAdornment, Paper, TextField, Button } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState, SyntheticEvent } from "react";
 import { useCookies } from "react-cookie";
 import { useDispatch } from "react-redux";
 import { setTickets } from "../../features/ticketsSlice";
@@ -14,8 +14,34 @@ import HardwareIcon from "@mui/icons-material/Hardware";
 import TicketTable from "./tickets-table";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import AddTicketModal from "./tickets-table/add-ticket-modal";
+import { getUsers } from "../admin/service";
+import Autocomplete from "@mui/material/Autocomplete";
 
 const Tickets = () => {
+    const [users, setUsers] = useState<any>([{}]);
+
+    const [isAdmin, setIsAdmin] = useState<Boolean | string>("checking");
+
+    const verifyAdmin = async () => {
+        const response = await getUsers();
+        if (response !== "Not Admin") {
+            setUsers(response);
+            setIsAdmin(true);
+        } else {
+            setUsers(null);
+            setIsAdmin(false);
+        }
+    };
+
+    useEffect(() => {
+        verifyAdmin();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    // Project Options for AutoComplete
+    const userOptions = users.map((user: any) => {
+        return user.email;
+    });
+
     const [cookies, setCookie, removeCookie] = useCookies<any>(["user"]);
 
     const dispatch = useDispatch();
@@ -247,12 +273,12 @@ const Tickets = () => {
                                                     // backgroundColor: "#edeceb",
                                                     WebkitTextFillColor:
                                                         selectedFilteredTicket?.priority ===
-                                                        "Low"
+                                                            "Low"
                                                             ? "Green"
                                                             : selectedFilteredTicket?.priority ===
-                                                              "Medium"
-                                                            ? "Orange"
-                                                            : "Red",
+                                                                "Medium"
+                                                                ? "Orange"
+                                                                : "Red",
                                                     borderRadius: "4px",
                                                     fontWeight: "bold",
                                                 },
@@ -321,10 +347,10 @@ const Tickets = () => {
                                                 startAdornment: (
                                                     <InputAdornment position="start">
                                                         {selectedFilteredTicket?.type ===
-                                                        "Issue" ? (
+                                                            "Issue" ? (
                                                             <ConstructionIcon />
                                                         ) : selectedFilteredTicket?.type ===
-                                                          "Bug Fix" ? (
+                                                            "Bug Fix" ? (
                                                             <PestControlIcon />
                                                         ) : (
                                                             <HardwareIcon fontSize="small" />
@@ -382,46 +408,52 @@ const Tickets = () => {
                                         {/* {selectedFilteredTicket?.status} */}
                                     </Box>
                                 </Box>
-                                <Box
-                                    sx={{
-                                        flex: "1",
-                                        "@media(min-width: 700px)": {
-                                            flex: "1 1 0",
-                                            overflowY: "scroll",
-                                        },
-                                    }}
-                                >
-                                    <Box sx={{ display: "flex", gap: "1rem" }}>
-                                        <p>Assigned Devs:</p>
-                                        <Box sx={{ display: "flex" }}>
-                                            <input
-                                                value={newDev}
-                                                type="text"
-                                                placeholder="Add Dev"
-                                                style={{ width: "100%" }}
-                                                onChange={(e) => {
-                                                    setNewDev(e.target.value);
+                                {isAdmin ? (<div>
+                                    <div style={{
+                                        display: "flex",
+                                        justifyContent: "space-between"
+                                    }}>
+                                        <div style={{ width: "100%" }}>
+                                            <Autocomplete
+                                                disablePortal
+                                                id="combo-box-demo"
+                                                size="small"
+                                                options={userOptions[0] ? userOptions : []}
+                                                onChange={(e: SyntheticEvent, value: null | string) => {
+                                                    if (value) {
+                                                        setNewDev(value);
+                                                    }
                                                 }}
+                                                renderInput={(params: object) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Assigned Dev"
+                                                    />
+                                                )}
                                             />
-                                            <button onClick={addNewDev}>
-                                                Add
-                                            </button>
-                                        </Box>
-                                    </Box>
+                                        </div>
+                                        <button onClick={addNewDev}>
+                                            Add
+                                        </button>
+                                    </div>
+
+                                    <p style={{ marginTop: "10px" }}>Developers:</p>
                                     <div
                                         style={{
                                             display: "flex",
                                             gap: "1rem",
                                             flexWrap: "wrap",
+                                            marginTop: "10px"
                                         }}
                                     >
                                         {selectedFilteredTicket?.assignedDevs?.map(
-                                            (devs: string, index: number) => (
-                                                <p key={index}>{devs}</p>
-                                            )
+                                            (devs: string, index: number) =>
+                                                devs !== '' ? (
+                                                    <p key={index}>{index}.{devs}</p>
+                                                ) : null
                                         )}
                                     </div>
-                                </Box>
+                                </div>) : null}
                             </Box>
                         )}
                     </Paper>
